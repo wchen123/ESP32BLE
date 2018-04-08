@@ -53,6 +53,12 @@ int ledPin = 27;
   int in1 = 12;
   int in2 = 14;
 
+   int enB = 17;
+  int in3 = 23;
+  int in4 = 2;
+
+  int direction;
+
 void motorStop(){
    digitalWrite(in1, LOW);
    digitalWrite(in2, LOW); 
@@ -69,8 +75,12 @@ class MyServerCallbacks: public BLEServerCallbacks {
       deviceConnected = false;
     }
 };
-int y_coo_pwm = 0;
+int y_coo_pwm_parts = 0;
+int x_coo_pwm_parts = 0;
+
 int x_coo_pwm = 0;
+int y_coo_pwm = 0;
+
 int flag = 0;
 int rightFlag = 0;
 std::string rxValue;
@@ -89,21 +99,27 @@ class MyCallbacks: public BLECharacteristicCallbacks {
            // check which characteristic it is talking to
            //left joystick characteristic 
            if(getUUID.compare(UUID_RX_LEFT) == 0){
-              y_coo_pwm = (byte)rxValue[i];
+              y_coo_pwm_parts = (byte)rxValue[i];
+      
               if (flag == 0) {
                   Serial.print("left motor pwm reached: ");
                   flag = 1;
               }
-              Serial.print((byte)y_coo_pwm);
+
+              Serial.print((byte)y_coo_pwm_parts);
+              //direction = ((byte)y_coo_pwm_parts >> 8);
+              //Serial.print("\n***direction***");
+             // Serial.print(direction);
+             // Serial.print("\n");
            
               //right joystick characteristic
            }else if (getUUID.compare(UUID_RX_RIGHT) == 0) {
-              x_coo_pwm = (byte)rxValue[i];
+              x_coo_pwm_parts = (byte)rxValue[i];
               if(flag == 0) {
                   Serial.print("right motor pwm reached: ");
                   flag = 1;
               }
-              Serial.print((byte)x_coo_pwm);
+              Serial.print((byte)x_coo_pwm_parts);
            }
          //  Serial.print("getUUID---->: ");
           // Serial.print(getUUID[0]);Serial.print(getUUID[1]);Serial.print(getUUID[2]);
@@ -112,17 +128,18 @@ class MyCallbacks: public BLECharacteristicCallbacks {
             Serial.print("control uuid reached---->: ");
                 Serial.print((byte)rxValue[i]);
                 if((byte)rxValue[i] == 0xA) {
-                   y_coo_pwm = 0;
+                   y_coo_pwm_parts = 0;
                    Serial.print("control uuid reached: ");
-                   Serial.print(y_coo_pwm);
+                   Serial.print(y_coo_pwm_parts);
                    motorStop();
                 }
            }
           
         }
         flag = 0;
-        Serial.println();
+
         Serial.println("*********");
+        
       }
     }
 };
@@ -183,30 +200,82 @@ void setup() {
    // set all the motor control pins to outputs
      ledcAttachPin(enA, 1);
    ledcSetup(1, 12000, 8); 
-  //pinMode(enB, OUTPUT);
+
+   ledcAttachPin(enB, 2);
+   ledcSetup(2, 12000, 8); 
+  
   pinMode(in1, OUTPUT);
   pinMode(in2, OUTPUT);
-//  pinMode(in3, OUTPUT);
- // pinMode(in4, OUTPUT);
+  pinMode(in3, OUTPUT);
+  pinMode(in4, OUTPUT);
 }
 
 void motorForwards(int x){
+   //left 
    digitalWrite(in1, LOW);
    digitalWrite(in2, HIGH); 
+
+   //right
+   digitalWrite(in3, LOW);
+   digitalWrite(in4, HIGH);
+   
    ledcWrite(1, x);
+   ledcWrite(2, x);
+}
+void motorBackwards(int x){
+   //left 
+   digitalWrite(in1, HIGH);
+   digitalWrite(in2, LOW); 
+
+   //right
+   digitalWrite(in3, HIGH);
+   digitalWrite(in4, LOW);
+   
+   ledcWrite(1, x);
+   ledcWrite(2, x);
 }
 
+void leftTurn(int x) {
+  //left 
+   digitalWrite(in1, LOW);
+   digitalWrite(in2, HIGH); 
+
+   //right
+   digitalWrite(in3, HIGH);
+   digitalWrite(in4, LOW);
+   
+   ledcWrite(1, x);
+   ledcWrite(2, x);
+}
+
+void rightTurn(int x) {
+  //left 
+   digitalWrite(in1, HIGH);
+   digitalWrite(in2, LOW); 
+
+   //right
+   digitalWrite(in3, LOW);
+   digitalWrite(in4, HIGH);
+   
+   ledcWrite(1, x);
+   ledcWrite(2, x);
+}
 
 void loop() {
 //digitalWrite(ledPin, HIGH);
   if (deviceConnected) {
-    Serial.printf("*** Sent Value: %d ***\n", txValue);
-    pCharacteristic->setValue(&txValue, 1);
-    pCharacteristic->notify();
-    txValue++;
+      Serial.printf("*** Sent Value: %d ***", txValue);
+      pCharacteristic->setValue(&txValue, 1);
+      pCharacteristic->notify();
+      txValue++;
+
+      if(rxValue[0] == 1) {
+          motorForwards(y_coo_pwm_parts);
           
-         motorForwards(y_coo_pwm);
-        Serial.printf("*** y_coo_pwm: %d ***\n", y_coo_pwm);
+      }else {
+          motorBackwards(y_coo_pwm_parts);
+      }
+
   }
   
   delay(1000);

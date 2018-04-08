@@ -36,13 +36,30 @@ uint8_t txValue = 0;
 // See the following for generating UUIDs:
 // https://www.uuidgenerator.net/
 
-#define SERVICE_UUID             "6E400001-B5A3-F393-E0A9-E50E24DCCA9E" // UART service UUID
-#define CHARACTERISTIC_UUID_RX   "6E400002-B5A3-F393-E0A9-E50E24DCCA9E"
-#define CHARACTERISTIC_UUID_TX   "6E400003-B5A3-F393-E0A9-E50E24DCCA9E"
-#define CHARACTERISTIC_UUID_RIGHT "6E400004-B5A3-F393-E0A9-E50E24DCCA9E"
+#define SERVICE_UUID                 "6E400001-B5A3-F393-E0A9-E50E24DCCA9E" // UART service UUID
+#define CHARACTERISTIC_UUID_RX       "6E400002-B5A3-F393-E0A9-E50E24DCCA9E"
+#define CHARACTERISTIC_UUID_TX       "6E400003-B5A3-F393-E0A9-E50E24DCCA9E"
+#define CHARACTERISTIC_UUID_RIGHT    "6E400004-B5A3-F393-E0A9-E50E24DCCA9E"
+#define CHARACTERISTIC_UUID_CONTROLS "6E400005-B5A3-F393-E0A9-E50E24DCCA9E"
 
-std::string UUID_RX_LEFT = "6e400002-b5a3-f393-e0a9-e50e24dcca9e";
+std::string UUID_RX_LEFT =  "6e400002-b5a3-f393-e0a9-e50e24dcca9e";
 std::string UUID_RX_RIGHT = "6e400004-b5a3-f393-e0a9-e50e24dcca9e";
+std::string UUID_CONTROLS = "6e400005-b5a3-f393-e0a9-e50e24dcca9e";
+
+
+
+int ledPin = 27;  
+  int enA = 13;
+  int in1 = 12;
+  int in2 = 14;
+
+void motorStop(){
+   digitalWrite(in1, LOW);
+   digitalWrite(in2, LOW); 
+   ledcWrite(1, 0);
+}
+
+
 class MyServerCallbacks: public BLEServerCallbacks {
     void onConnect(BLEServer* pServer) {
       deviceConnected = true;
@@ -52,13 +69,14 @@ class MyServerCallbacks: public BLEServerCallbacks {
       deviceConnected = false;
     }
 };
-int left_motor_pwm = 0;
-int right_motor_pwm = 0;
+int y_coo_pwm = 0;
+int x_coo_pwm = 0;
 int flag = 0;
 int rightFlag = 0;
+std::string rxValue;
 class MyCallbacks: public BLECharacteristicCallbacks {
     void onWrite(BLECharacteristic *pCharacteristic) {
-      std::string rxValue = pCharacteristic->getValue();
+      rxValue = pCharacteristic->getValue();
       std::string getUUID = pCharacteristic->getUUID().toString();
 
       if (rxValue.length() > 0) {
@@ -71,21 +89,34 @@ class MyCallbacks: public BLECharacteristicCallbacks {
            // check which characteristic it is talking to
            //left joystick characteristic 
            if(getUUID.compare(UUID_RX_LEFT) == 0){
-              left_motor_pwm = (byte)rxValue[i];
+              y_coo_pwm = (byte)rxValue[i];
               if (flag == 0) {
                   Serial.print("left motor pwm reached: ");
                   flag = 1;
               }
-              Serial.print((byte)left_motor_pwm);
+              Serial.print((byte)y_coo_pwm);
            
               //right joystick characteristic
            }else if (getUUID.compare(UUID_RX_RIGHT) == 0) {
-              right_motor_pwm = (byte)rxValue[i];
+              x_coo_pwm = (byte)rxValue[i];
               if(flag == 0) {
                   Serial.print("right motor pwm reached: ");
                   flag = 1;
               }
-              Serial.print((byte)right_motor_pwm);
+              Serial.print((byte)x_coo_pwm);
+           }
+         //  Serial.print("getUUID---->: ");
+          // Serial.print(getUUID[0]);Serial.print(getUUID[1]);Serial.print(getUUID[2]);
+           
+           if (getUUID.compare(UUID_CONTROLS) == 0) {
+            Serial.print("control uuid reached---->: ");
+                Serial.print((byte)rxValue[i]);
+                if((byte)rxValue[i] == 0xA) {
+                   y_coo_pwm = 0;
+                   Serial.print("control uuid reached: ");
+                   Serial.print(y_coo_pwm);
+                   motorStop();
+                }
            }
           
         }
@@ -96,10 +127,6 @@ class MyCallbacks: public BLECharacteristicCallbacks {
     }
 };
 
-int ledPin = 27;  
-  int enA = 13;
-  int in1 = 12;
-  int in2 = 14;
   
 void setup() {
   Serial.begin(115200);
@@ -132,11 +159,15 @@ void setup() {
                                          BLECharacteristic::PROPERTY_WRITE
                                        );                                   
 
-
+  BLECharacteristic *controlCharacteristic = pService->createCharacteristic(
+                                         CHARACTERISTIC_UUID_CONTROLS,
+                                         BLECharacteristic::PROPERTY_WRITE
+                                       );    
 
   pCharacteristic->setCallbacks(new MyCallbacks());
   //call the callback function for the right side of the characteristic
   rJoystickCharacteristic->setCallbacks(new MyCallbacks());
+  controlCharacteristic->setCallbacks(new MyCallbacks());
 
   // Start the service
   pService->start();
@@ -164,6 +195,8 @@ void motorForwards(int x){
    digitalWrite(in2, HIGH); 
    ledcWrite(1, x);
 }
+
+
 void loop() {
 //digitalWrite(ledPin, HIGH);
   if (deviceConnected) {
@@ -171,7 +204,9 @@ void loop() {
     pCharacteristic->setValue(&txValue, 1);
     pCharacteristic->notify();
     txValue++;
-    motorForwards(left_motor_pwm);
+          
+         motorForwards(y_coo_pwm);
+        Serial.printf("*** y_coo_pwm: %d ***\n", y_coo_pwm);
   }
   
   delay(1000);

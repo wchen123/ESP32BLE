@@ -57,12 +57,18 @@ int ledPin = 27;
   int in3 = 23;
   int in4 = 2;
 
-  int direction;
+  int left_motor_dir;
 
-void motorStop(){
+void LeftMotorStop(){
    digitalWrite(in1, LOW);
    digitalWrite(in2, LOW); 
    ledcWrite(1, 0);
+}
+
+void RightMotorStop(){
+   digitalWrite(in3, LOW);
+   digitalWrite(in4, LOW); 
+   ledcWrite(2, 0);
 }
 
 
@@ -75,11 +81,9 @@ class MyServerCallbacks: public BLEServerCallbacks {
       deviceConnected = false;
     }
 };
-int y_coo_pwm_parts = 0;
-int x_coo_pwm_parts = 0;
-
-int x_coo_pwm = 0;
-int y_coo_pwm = 0;
+int left_motor_pwm = 0;
+int right_motor_pwm = 0;
+int right_motor_dir = 0;
 
 int flag = 0;
 int rightFlag = 0;
@@ -99,39 +103,44 @@ class MyCallbacks: public BLECharacteristicCallbacks {
            // check which characteristic it is talking to
            //left joystick characteristic 
            if(getUUID.compare(UUID_RX_LEFT) == 0){
-              y_coo_pwm_parts = (byte)rxValue[i];
+              left_motor_dir = (byte)rxValue[0];
+              left_motor_pwm = (byte)rxValue[i];
       
               if (flag == 0) {
                   Serial.print("left motor pwm reached: ");
                   flag = 1;
               }
 
-              Serial.print((byte)y_coo_pwm_parts);
-              //direction = ((byte)y_coo_pwm_parts >> 8);
-              //Serial.print("\n***direction***");
-             // Serial.print(direction);
-             // Serial.print("\n");
+              Serial.print((byte)left_motor_pwm);
            
               //right joystick characteristic
            }else if (getUUID.compare(UUID_RX_RIGHT) == 0) {
-              x_coo_pwm_parts = (byte)rxValue[i];
+              right_motor_dir = (byte)rxValue[0];
+              right_motor_pwm = (byte)rxValue[i];
               if(flag == 0) {
-                  Serial.print("right motor pwm reached: ");
+                  Serial.print("right motor pwm reached!");
+       
                   flag = 1;
               }
-              Serial.print((byte)x_coo_pwm_parts);
+              Serial.print(" dir: ");
+              Serial.print(right_motor_dir);
+              Serial.print(" pwm: ");
+              Serial.print((byte)right_motor_pwm);
            }
          //  Serial.print("getUUID---->: ");
           // Serial.print(getUUID[0]);Serial.print(getUUID[1]);Serial.print(getUUID[2]);
            
            if (getUUID.compare(UUID_CONTROLS) == 0) {
-            Serial.print("control uuid reached---->: ");
+            Serial.print("control uuid reached: ");
                 Serial.print((byte)rxValue[i]);
                 if((byte)rxValue[i] == 0xA) {
-                   y_coo_pwm_parts = 0;
-                   Serial.print("control uuid reached: ");
-                   Serial.print(y_coo_pwm_parts);
-                   motorStop();
+                   left_motor_pwm = 0;
+                   Serial.print("stop left motor signal received\n");
+                   LeftMotorStop();
+                }else if ((byte)rxValue[i] == 0xB) {
+                  right_motor_pwm = 0;
+                   Serial.print("stop right motor signal received\n");
+                   RightMotorStop();
                 }
            }
           
@@ -210,70 +219,72 @@ void setup() {
   pinMode(in4, OUTPUT);
 }
 
-void motorForwards(int x){
+void LeftMotorForwards(int x){
    //left 
    digitalWrite(in1, LOW);
    digitalWrite(in2, HIGH); 
 
-   //right
-   digitalWrite(in3, LOW);
-   digitalWrite(in4, HIGH);
+//   //right
+//   digitalWrite(in3, LOW);
+//   digitalWrite(in4, HIGH);
    
    ledcWrite(1, x);
-   ledcWrite(2, x);
+  // ledcWrite(2, x);
 }
-void motorBackwards(int x){
+void LeftMotorBackwards(int x){
    //left 
    digitalWrite(in1, HIGH);
    digitalWrite(in2, LOW); 
 
-   //right
-   digitalWrite(in3, HIGH);
-   digitalWrite(in4, LOW);
+//   //right
+//   digitalWrite(in3, HIGH);
+//   digitalWrite(in4, LOW);
    
    ledcWrite(1, x);
-   ledcWrite(2, x);
+  // ledcWrite(2, x);
 }
 
-void leftTurn(int x) {
-  //left 
-   digitalWrite(in1, LOW);
-   digitalWrite(in2, HIGH); 
 
-   //right
-   digitalWrite(in3, HIGH);
-   digitalWrite(in4, LOW);
-   
-   ledcWrite(1, x);
-   ledcWrite(2, x);
-}
+void RightMotorForwards(int x){ 
 
-void rightTurn(int x) {
-  //left 
-   digitalWrite(in1, HIGH);
-   digitalWrite(in2, LOW); 
-
-   //right
+//   //right
    digitalWrite(in3, LOW);
    digitalWrite(in4, HIGH);
    
-   ledcWrite(1, x);
+  
    ledcWrite(2, x);
 }
+void RightMotorBackwards(int x){
+
+//   //right
+   digitalWrite(in3, HIGH);
+   digitalWrite(in4, LOW);
+   
+   ledcWrite(2, x);
+}
+
+
 
 void loop() {
 //digitalWrite(ledPin, HIGH);
   if (deviceConnected) {
-      Serial.printf("*** Sent Value: %d ***", txValue);
+      Serial.printf("*** Sent Value: %d ***\n", txValue);
       pCharacteristic->setValue(&txValue, 1);
       pCharacteristic->notify();
       txValue++;
 
-      if(rxValue[0] == 1) {
-          motorForwards(y_coo_pwm_parts);
+      if(left_motor_dir == 1) {
+          LeftMotorForwards(left_motor_pwm);
           
       }else {
-          motorBackwards(y_coo_pwm_parts);
+          LeftMotorBackwards(left_motor_pwm);
+      }
+
+
+      if(right_motor_dir == 1) {
+        RightMotorForwards(right_motor_pwm);
+      }else{
+         RightMotorBackwards(right_motor_pwm);
       }
 
   }

@@ -106,7 +106,7 @@ class MyLeftMotorCallbacks: public BLECharacteristicCallbacks {
            // check which characteristic it is talking to
            //left joystick characteristic 
            if(getUUID.compare(UUID_RX_LEFT) == 0){
-              left_motor_dir = (byte)rxValue[0];
+              //left_motor_dir = (byte)rxValue[0];
               left_motor_pwm = (byte)rxValue[i];
       
               if (flag == 0) {
@@ -114,8 +114,8 @@ class MyLeftMotorCallbacks: public BLECharacteristicCallbacks {
                   flag = 1;
               }
 
-              Serial.print(" dir: ");
-              Serial.print(left_motor_dir);
+              //Serial.print(" dir: ");
+              //Serial.print(left_motor_dir);
               Serial.print(" pwm: ");
               Serial.print((byte)left_motor_pwm);
            }

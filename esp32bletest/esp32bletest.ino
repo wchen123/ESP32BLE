@@ -72,6 +72,10 @@ int right_motor_stop = 0;
 int flag = 0;
 int rightFlag = 0;
 
+std::string rxValue;
+uint8_t pattern[10] = {0,0,0,0,0,0,0,0,0,0};
+int stop_signal_counter = 0;
+
 void LeftMotorStop(){
    digitalWrite(in1, LOW);
    digitalWrite(in2, LOW); 
@@ -95,7 +99,9 @@ class MyServerCallbacks: public BLEServerCallbacks {
     }
 };
 
-std::string rxValue;
+
+
+
 class MyLeftMotorCallbacks: public BLECharacteristicCallbacks {
     void onWrite(BLECharacteristic *pCharacteristic) {
       rxValue = pCharacteristic->getValue();
@@ -105,7 +111,8 @@ class MyLeftMotorCallbacks: public BLECharacteristicCallbacks {
        return;
     }
       if (rxValue.length() > 0) {
-        Serial.println("*********");      
+        Serial.println("*********");    
+        stop_signal_counter++;  
         left_motor_pwm = (byte)rxValue[3];
         left_motor_dir = ((byte)rxValue[2]) & DIRECTION_MASK;
         left_motor_stop = ((byte)rxValue[2]) & STOP_SIGNAL_MASK;
@@ -383,7 +390,7 @@ void RightMotorBackwards(int x){
 }
 
 
-
+int i = 0;
 void loop() {
 //digitalWrite(ledPin, HIGH);
   if (deviceConnected) {
@@ -392,13 +399,34 @@ void loop() {
       //pCharacteristic->notify();
       //txValue++;
 
-      if((rxCharacteristic->getValue()).empty()) {
-         M
-      }else {
-        std::string charValue = pCharacteristic->getValue();
-        Serial.print("*** something is in pCharacteristics ***\n");
-        Serial.print((byte)charValue[3]);
-        Serial.print("\n");
+//      if((rxCharacteristic->getValue()).empty()) {
+//         M
+//      }else {
+//        std::string charValue = pCharacteristic->getValue();
+//        Serial.print("*** something is in pCharacteristics ***\n");
+//        Serial.print((byte)charValue[3]);
+//        Serial.print("\n");
+//      }
+      
+      pattern[i] = stop_signal_counter;
+      Serial.printf("*** %d %d %d %d %d %d %d %d %d %d***\n", pattern[0], pattern[1],  pattern[2],  pattern[3],  pattern[4], 
+                          pattern[5], pattern[6],  pattern[7],  pattern[8],  pattern[9]);
+      if ((pattern[0] == pattern[1]) && (pattern[1] == pattern[2]) && (pattern[2] == pattern[3]) && (pattern[3] == pattern[4])  
+              && (pattern[4] == pattern[5]) && (pattern[5] == pattern[6]) 
+              && (pattern[6] == pattern[7]) && (pattern[7] == pattern[8]) && (pattern[8] == pattern[9])) {
+                        LeftMotorStop();
+                        RightMotorStop(); 
+                        left_motor_pwm = 0;
+                        right_motor_pwm = 0;
+                        Serial.print("*** all pattern are the same )))))-------------> ***\n");
+                        stop_signal_counter = 0;
+      }
+      
+      
+
+      i++;
+      if(i >= 10) {
+        i = 0;
       }
 
       if(left_motor_dir == DIRECTION_MASK) {
@@ -429,9 +457,12 @@ void loop() {
         Serial.print("\n");
         Serial.println("-------------------");
 
-  }
   
-  delay(1000);
+
+  }
+   
+  
+  delay(100);
   //digitalWrite(ledPin, LOW);
  // 
  // delay(1000);

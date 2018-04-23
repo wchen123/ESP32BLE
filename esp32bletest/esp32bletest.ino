@@ -115,20 +115,20 @@ class MyLeftMotorCallbacks: public BLECharacteristicCallbacks {
         stop_signal_counter++;  
         left_motor_pwm = (byte)rxValue[3];
         left_motor_dir = ((byte)rxValue[2]) & DIRECTION_MASK;
-        left_motor_stop = ((byte)rxValue[2]) & STOP_SIGNAL_MASK;
+        left_motor_stop = ((byte)rxValue[2]) ;//& STOP_SIGNAL_MASK;
 
         right_motor_pwm = (byte)rxValue[1];
         right_motor_dir = ((byte)rxValue[0]) & DIRECTION_MASK;
         right_motor_stop = ((byte)rxValue[0])& STOP_SIGNAL_MASK;
-        Serial.print("(byte)rxValue[0]: ");
-        Serial.print((byte)rxValue[0]);
-        Serial.print(" (byte)rxValue[1]: ");
-        Serial.print((byte)rxValue[1]);
-
-        Serial.print(" (byte)rxValue[2]: ");
-        Serial.print((byte)rxValue[2]);
-        Serial.print(" (byte)rxValue[3]: ");
-        Serial.print((byte)rxValue[3]);
+//        Serial.print("(byte)rxValue[0]: ");
+//        Serial.print((byte)rxValue[0]);
+//        Serial.print(" (byte)rxValue[1]: ");
+//        Serial.print((byte)rxValue[1]);
+//
+//        Serial.print(" (byte)rxValue[2]: ");
+//        Serial.print((byte)rxValue[2]);
+//        Serial.print(" (byte)rxValue[3]: ");
+//        Serial.print((byte)rxValue[3]);
         
 
         Serial.println("*********");
@@ -184,29 +184,27 @@ class MyLeftMotorStopCallbacks: public BLECharacteristicCallbacks {
       std::string getUUID = pCharacteristic->getUUID().toString();
 
   if (getUUID.compare(UUID_CONTROLS) != 0) {
-     Serial.println("+++++++++++++++reach MyLeftMotorStopCallbacks+++++++++++\n");
+     
       return;
   }
       if (rxValue.length() > 0) {
-        Serial.println("*********");
-        Serial.print("Received length: ");
-        Serial.println(sizeof(rxValue));
-        Serial.print("Received Value: ");
-      
-        for (int i = 0; i < rxValue.length(); i++){
+     
+        
            // check which characteristic it is talking to
         
-           if (getUUID.compare(UUID_CONTROLS) == 0) {
-                Serial.print((byte)rxValue[i]);
-                if((byte)rxValue[i] == 0xA) {
-                   left_motor_pwm = 0;
-                   Serial.print("<<<<<----------stop left motor signal received\n");
-                   LeftMotorStop();
-                }
+           if (rxValue[0] == 0xF0) {
+            
+                left_motor_pwm = 0;
+                
+           }else if(rxValue[0] == 0x0F) {
+              right_motor_pwm =0 ;
            }
+           Serial.println("+++++++++++++++reach MyLeftMotorStopCallbacks+++++++++++\n");
+           Serial.print((byte)rxValue[0]);
+           Serial.print("\n");
           
-        }
-        flag = 0;
+        
+     
 
         Serial.println("*********");
         
@@ -214,70 +212,6 @@ class MyLeftMotorStopCallbacks: public BLECharacteristicCallbacks {
     }
 };
 
-//class MyCallbacks: public BLECharacteristicCallbacks {
-//    void onWrite(BLECharacteristic *pCharacteristic) {
-//      std::string rxValue = pCharacteristic->getValue();
-//      std::string getUUID = pCharacteristic->getUUID().toString();
-//
-//      if (rxValue.length() > 0) {
-//        Serial.println("*********");
-//        Serial.print("Received length: ");
-//        Serial.println(sizeof(rxValue));
-//        Serial.print("Received Value: ");
-//      
-//        for (int i = 0; i < rxValue.length(); i++){
-//           // check which characteristic it is talking to
-//           //left joystick characteristic 
-//           if(getUUID.compare(UUID_RX_LEFT) == 0){
-//              left_motor_dir = (byte)rxValue[0];
-//              left_motor_pwm = (byte)rxValue[i];
-//      
-//              if (flag == 0) {
-//                  Serial.print("left motor pwm reached: ");
-//                  flag = 1;
-//              }
-//
-//              Serial.print((byte)left_motor_pwm);
-//           
-//              //right joystick characteristic
-//           }else if (getUUID.compare(UUID_RX_RIGHT) == 0) {
-//              right_motor_dir = (byte)rxValue[0];
-//              right_motor_pwm = (byte)rxValue[i];
-//              if(flag == 0) {
-//                  Serial.print("right motor pwm reached!");
-//       
-//                  flag = 1;
-//              }
-//              Serial.print(" dir: ");
-//              Serial.print(right_motor_dir);
-//              Serial.print(" pwm: ");
-//              Serial.print((byte)right_motor_pwm);
-//           }
-//         //  Serial.print("getUUID---->: ");
-//          // Serial.print(getUUID[0]);Serial.print(getUUID[1]);Serial.print(getUUID[2]);
-//           
-//           if (getUUID.compare(UUID_CONTROLS) == 0) {
-//            Serial.print("control uuid reached: ");
-//                Serial.print((byte)rxValue[i]);
-//                if((byte)rxValue[i] == 0xA) {
-//                   left_motor_pwm = 0;
-//                   Serial.print("stop left motor signal received\n");
-//                   LeftMotorStop();
-//                }else if ((byte)rxValue[i] == 0xB) {
-//                  right_motor_pwm = 0;
-//                   Serial.print("stop right motor signal received\n");
-//                   RightMotorStop();
-//                }
-//           }
-//          
-//        }
-//        flag = 0;
-//
-//        Serial.println("*********");
-//        
-//      }
-//    }
-//};
 
   
 void setup() {
@@ -414,10 +348,10 @@ void loop() {
       if ((pattern[0] == pattern[1]) && (pattern[1] == pattern[2]) && (pattern[2] == pattern[3]) && (pattern[3] == pattern[4])  
               && (pattern[4] == pattern[5]) && (pattern[5] == pattern[6]) 
               && (pattern[6] == pattern[7]) && (pattern[7] == pattern[8]) && (pattern[8] == pattern[9])) {
-                        LeftMotorStop();
-                        RightMotorStop(); 
-                        left_motor_pwm = 0;
-                        right_motor_pwm = 0;
+                        //LeftMotorStop();
+                        //RightMotorStop(); 
+                        //left_motor_pwm = 0;
+                        //right_motor_pwm = 0;
                         Serial.print("*** all pattern are the same )))))-------------> ***\n");
                         stop_signal_counter = 0;
       }
@@ -462,7 +396,7 @@ void loop() {
   }
    
   
-  delay(100);
+  delay(1000);
   //digitalWrite(ledPin, LOW);
  // 
  // delay(1000);

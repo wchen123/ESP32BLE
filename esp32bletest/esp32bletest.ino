@@ -40,17 +40,26 @@ uint8_t txValue = 0;
 // See the following for generating UUIDs:
 // https://www.uuidgenerator.net/
 
-#define SERVICE_UUID                 "6E400001-B5A3-F393-E0A9-E50E24DCCA9E" // UART service UUID
-#define CHARACTERISTIC_UUID_RX       "6E400002-B5A3-F393-E0A9-E50E24DCCA9E"
+//esp lora uuid
+//#define SERVICE_UUID                 "6E400001-B5A3-F393-E0A9-E50E24DCCA9E" // UART service UUID
+//#define CHARACTERISTIC_UUID_RX       "6E400002-B5A3-F393-E0A9-E50E24DCCA9E"
 #define CHARACTERISTIC_UUID_TX       "6E400003-B5A3-F393-E0A9-E50E24DCCA9E"
 #define CHARACTERISTIC_UUID_RIGHT    "6E400004-B5A3-F393-E0A9-E50E24DCCA9E"
 #define CHARACTERISTIC_UUID_CONTROLS "6E400005-B5A3-F393-E0A9-E50E24DCCA9E"
 
-std::string UUID_RX_LEFT =  "6e400002-b5a3-f393-e0a9-e50e24dcca9e";
+
+
+//std::string UUID_RX_LEFT =  "6e400002-b5a3-f393-e0a9-e50e24dcca9e";
 std::string UUID_RX_RIGHT = "6e400004-b5a3-f393-e0a9-e50e24dcca9e";
 std::string UUID_CONTROLS = "6e400005-b5a3-f393-e0a9-e50e24dcca9e";
 
 
+//0xfb, 0x34, 0x9b, 0x5f, 0x80, 0x00, 0x00, 0x80, 0x00, 0x10, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x00
+//
+#define SERVICE_UUID "000000FF-0000-1000-8000-00805F9B34FB"
+#define CHARACTERISTIC_UUID_RX "0000FF01-0000-1000-8000-00805F9B34FB"
+
+std::string UUID_RX_LEFT = "0000ff01-0000-1000-8000-00805f9b34fb";
 
 int ledPin = 27;  
   int enA = 13;
@@ -138,79 +147,79 @@ class MyLeftMotorCallbacks: public BLECharacteristicCallbacks {
 };
 
 
-class MyRightMotorCallbacks: public BLECharacteristicCallbacks {
-    void onWrite(BLECharacteristic *pCharacteristic) {
-      std::string rxValue = pCharacteristic->getValue();
-      std::string getUUID = pCharacteristic->getUUID().toString();
-
-      if (getUUID.compare(UUID_RX_RIGHT) != 0) {
-        return;
-      }
-      if (rxValue.length() > 0) {
-        Serial.println("*********");
-        Serial.print("Received length: ");
-        Serial.println(sizeof(rxValue));
-        Serial.print("Received Value: ");
-      
-        for (int i = 0; i < rxValue.length(); i++){
-           // check which characteristic it is talking to
-            if (getUUID.compare(UUID_RX_RIGHT) == 0) {
-              right_motor_dir = (byte)rxValue[0];
-              right_motor_pwm = (byte)rxValue[i];
-              if(flag == 0) {
-                  Serial.print("right motor pwm reached!");
-       
-                  flag = 1;
-              }
-              Serial.print(" dir: ");
-              Serial.print(right_motor_dir);
-              Serial.print(" pwm: ");
-              Serial.print((byte)right_motor_pwm);
-           }
-         
-          
-        }
-        flag = 0;
-
-        Serial.println("*********");
-        
-      }
-    }
-};
-
-class MyLeftMotorStopCallbacks: public BLECharacteristicCallbacks {
-    void onWrite(BLECharacteristic *pCharacteristic) {
-      std::string rxValue = pCharacteristic->getValue();
-      std::string getUUID = pCharacteristic->getUUID().toString();
-
-  if (getUUID.compare(UUID_CONTROLS) != 0) {
-     
-      return;
-  }
-      if (rxValue.length() > 0) {
-     
-        
-           // check which characteristic it is talking to
-        
-           if (rxValue[0] == 0xF0) {
-            
-                left_motor_pwm = 0;
-                
-           }else if(rxValue[0] == 0x0F) {
-              right_motor_pwm =0 ;
-           }
-           Serial.println("+++++++++++++++reach MyLeftMotorStopCallbacks+++++++++++\n");
-           Serial.print((byte)rxValue[0]);
-           Serial.print("\n");
-          
-        
-     
-
-        Serial.println("*********");
-        
-      }
-    }
-};
+//class MyRightMotorCallbacks: public BLECharacteristicCallbacks {
+//    void onWrite(BLECharacteristic *pCharacteristic) {
+//      std::string rxValue = pCharacteristic->getValue();
+//      std::string getUUID = pCharacteristic->getUUID().toString();
+//
+//      if (getUUID.compare(UUID_RX_RIGHT) != 0) {
+//        return;
+//      }
+//      if (rxValue.length() > 0) {
+//        Serial.println("*********");
+//        Serial.print("Received length: ");
+//        Serial.println(sizeof(rxValue));
+//        Serial.print("Received Value: ");
+//      
+//        for (int i = 0; i < rxValue.length(); i++){
+//           // check which characteristic it is talking to
+//            if (getUUID.compare(UUID_RX_RIGHT) == 0) {
+//              right_motor_dir = (byte)rxValue[0];
+//              right_motor_pwm = (byte)rxValue[i];
+//              if(flag == 0) {
+//                  Serial.print("right motor pwm reached!");
+//       
+//                  flag = 1;
+//              }
+//              Serial.print(" dir: ");
+//              Serial.print(right_motor_dir);
+//              Serial.print(" pwm: ");
+//              Serial.print((byte)right_motor_pwm);
+//           }
+//         
+//          
+//        }
+//        flag = 0;
+//
+//        Serial.println("*********");
+//        
+//      }
+//    }
+//};
+//
+//class MyLeftMotorStopCallbacks: public BLECharacteristicCallbacks {
+//    void onWrite(BLECharacteristic *pCharacteristic) {
+//      std::string rxValue = pCharacteristic->getValue();
+//      std::string getUUID = pCharacteristic->getUUID().toString();
+//
+//  if (getUUID.compare(UUID_CONTROLS) != 0) {
+//     
+//      return;
+//  }
+//      if (rxValue.length() > 0) {
+//     
+//        
+//           // check which characteristic it is talking to
+//        
+//           if (rxValue[0] == 0xF0) {
+//            
+//                left_motor_pwm = 0;
+//                
+//           }else if(rxValue[0] == 0x0F) {
+//              right_motor_pwm =0 ;
+//           }
+//           Serial.println("+++++++++++++++reach MyLeftMotorStopCallbacks+++++++++++\n");
+//           Serial.print((byte)rxValue[0]);
+//           Serial.print("\n");
+//          
+//        
+//     
+//
+//        Serial.println("*********");
+//        
+//      }
+//    }
+//};
 
 
   
@@ -240,20 +249,20 @@ void setup() {
                                          BLECharacteristic::PROPERTY_WRITE
                                       );
   //added an extra characteristic for the right side of the joystick
-  BLECharacteristic *rJoystickCharacteristic = pService->createCharacteristic(
-                                         CHARACTERISTIC_UUID_RIGHT,
-                                         BLECharacteristic::PROPERTY_WRITE
-                                       );                                   
-
-  BLECharacteristic *controlCharacteristic = pService->createCharacteristic(
-                                         CHARACTERISTIC_UUID_CONTROLS,
-                                         BLECharacteristic::PROPERTY_WRITE
-                                       );    
+//  BLECharacteristic *rJoystickCharacteristic = pService->createCharacteristic(
+//                                         CHARACTERISTIC_UUID_RIGHT,
+//                                         BLECharacteristic::PROPERTY_WRITE
+//                                       );                                   
+//
+//  BLECharacteristic *controlCharacteristic = pService->createCharacteristic(
+//                                         CHARACTERISTIC_UUID_CONTROLS,
+//                                         BLECharacteristic::PROPERTY_WRITE
+//                                       );    
 
   //call the callback function for the left, right side of the mtor characteristic and stop signal
   rxCharacteristic->setCallbacks(new MyLeftMotorCallbacks());
-  rJoystickCharacteristic->setCallbacks(new MyRightMotorCallbacks());
-  controlCharacteristic->setCallbacks(new MyLeftMotorStopCallbacks());
+//  rJoystickCharacteristic->setCallbacks(new MyRightMotorCallbacks());
+//  controlCharacteristic->setCallbacks(new MyLeftMotorStopCallbacks());
 
   // Start the service
   pService->start();
@@ -396,7 +405,7 @@ void loop() {
   }
    
   
-  delay(1000);
+ // delay(1000);
   //digitalWrite(ledPin, LOW);
  // 
  // delay(1000);
